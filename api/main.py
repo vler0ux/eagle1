@@ -83,6 +83,10 @@ class EpisodeResponse(BaseModel):
     total_reward: float
     length: int
     success: bool
+    crashed: bool
+    max_abs_angle_deg: float
+    mean_main_thrust: float
+    mean_lateral_thrust: float
 
 
 # --------------------------------------------------------------------------
@@ -147,23 +151,48 @@ def play_episode(seed: Optional[int] = None) -> EpisodeResponse:
     env.close()
 
     success = total_reward > SUCCESS_THRESHOLD
-    _log_episode(total_reward, step_count, success)
+    # Un crash se traduit par la pénalité terminale de -100 définie par l'environnement
+    crashed = bool(steps) and steps[-1].reward <= -90
+
+    angles = [abs(s.observation[4]) for s in steps]
+    main_thrusts = [s.action[0] for s in steps if s.action[0] > 0]
+    lateral_thrusts = [abs(s.action[1]) for s in steps]
+
+    max_abs_angle_deg = float(np.degrees(max(angles))) if angles else 0.0
+    mean_main_thrust = float(np.mean(main_thrusts)) if main_thrusts else 0.0
+    mean_lateral_thrust = float(np.mean(lateral_thrusts)) if lateral_thrusts else 0.0
+
+    _log_episode(
+        total_reward, step_count, success, crashed,
+        max_abs_angle_deg, mean_main_thrust, mean_lateral_thrust,
+    )
 
     return EpisodeResponse(
         steps=steps,
         total_reward=total_reward,
         length=step_count,
         success=success,
+        crashed=crashed,
+        max_abs_angle_deg=max_abs_angle_deg,
+        mean_main_thrust=mean_main_thrust,
+        mean_lateral_thrust=mean_lateral_thrust,
     )
 
 
-def _log_episode(total_reward: float, length: int, success: bool) -> None:
-    """Ajoute une ligne au fichier de logs (format JSONL) utilisé par le futur dashboard."""
+def _log_episode(
+    total_reward: float, length: int, success: bool, crashed: bool,
+    max_abs_angle_deg: float, mean_main_thrust: float, mean_lateral_thrust: float,
+) -> None:
+    """Ajoute une ligne au fichier de logs (format JSONL) utilisé par le tableau de bord."""
     entry = {
         "timestamp": time.time(),
         "total_reward": total_reward,
         "length": length,
         "success": success,
+        "crashed": crashed,
+        "max_abs_angle_deg": max_abs_angle_deg,
+        "mean_main_thrust": mean_main_thrust,
+        "mean_lateral_thrust": mean_lateral_thrust,
     }
     with LOG_PATH.open("a") as f:
         f.write(json.dumps(entry) + "\n")
