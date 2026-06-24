@@ -1,0 +1,39 @@
+# --- Environnements virtuels ---
+venv-eagle1/
+venv-r1/
+.venv/
+env/
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Modèles entraînés (souvent volumineux) ---
+# Décommente la ligne suivante si tu préfères ne pas versionner les .zip de modèles
+# *.zip
+api/models/*.zip
+
+# --- Logs générés à l'exécution ---
+api/episodes_log.jsonl
+logs/
+*.log
+
+# --- TensorBoard ---
+runs/
+
+# --- Streamlit ---
+.streamlit/
+
+# --- Vidéos exportées (souvent volumineuses) ---
+*.mp4
+
+# --- OS / éditeurs ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
